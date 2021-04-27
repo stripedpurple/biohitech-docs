@@ -1,138 +1,147 @@
-# Troubleshooting BioBrain Networking Issues
+= Troubleshooting BioBrain Networking Issues
 
-> ***NOTE:*** All biobrains take upto 2 minutes to boot without internet.
+____
+*_NOTE:_* All biobrains take upto 2 minutes to boot without internet.
+____
 
-## First Steps
+== First Steps
 
-1. Determine if the biobrain is a Gen1, Gen2, Or Gen3 biobrain
+. Determine if the biobrain is a Gen1, Gen2, Or Gen3 biobrain
++
+____
+*_Note:_* Gen1 biobrains are dark (blackish/dark brown) and small. Gen2 are larger with silver sides and a black top/bottom. Gen3 units are silver with an orange wrapping.
+____
 
-   > ***Note:*** Gen1 biobrains are dark (blackish/dark brown) and small. Gen2 are larger with silver sides and a black top/bottom. Gen3 units are silver with an orange wrapping.
+. If the biobrain is a Gen 1or 2 a dongle (usb to ethernet) is required for booting. If the dongle is missing, it will take a minimium of 2 minutes to boot.
+. Once the unit has completed booting you will need to login. The username is `bht` and rthe password is `edwinhoch!!!`
++
+____
+*_NOTE:_* While typing in the password field there will be no visible changes
+____
 
-2. If the biobrain is a Gen 1or 2 a dongle (usb to ethernet) is required for booting. If the dongle is missing, it will take a minimium of 2 minutes to boot.
+== Confirming DHCP
 
-3. Once the unit has completed booting you will need to login. The username is `bht` and rthe password is `edwinhoch!!!`
+. Run the following command to determine the current state of the network interfaces
++
+[source,shell]
+----
+ifconfig
+eno1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.1.10.154  netmask 255.255.255.0  broadcast 10.1.10.255
+        inet6 fe80::96c6:91ff:fe16:c805  prefixlen 64  scopeid 0x20<link>
+        ether 94:c6:91:16:c8:05  txqueuelen 1000  (Ethernet)
+        RX packets 55920  bytes 4713026 (4.7 MB)
+        RX errors 0  dropped 42624  overruns 0  frame 0
+        TX packets 9022  bytes 1571300 (1.5 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        device interrupt 16  memory 0xdc200000-dc220000
 
-   > ***NOTE:*** While typing in the password field there will be no visible changes
+enx0050b624498c: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 25.25.25.200  netmask 255.255.255.0  broadcast 25.25.25.255
+        inet6 fe80::250:b6ff:fe24:498c  prefixlen 64  scopeid 0x20<link>
+        ether 00:50:b6:24:49:8c  txqueuelen 1000  (Ethernet)
+        RX packets 4197657  bytes 341261504 (341.2 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 5536970  bytes 358850828 (358.8 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 
-## Confirming DHCP
-1. Run the following command to determine the current state of the network interfaces
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 1246  bytes 143546 (143.5 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 1246  bytes 143546 (143.5 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+----
++
+The inet (IP Address) should be valid for the connected network.
 
-   ``` shell
-   ifconfig
-   eno1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-           inet 10.1.10.154  netmask 255.255.255.0  broadcast 10.1.10.255
-           inet6 fe80::96c6:91ff:fe16:c805  prefixlen 64  scopeid 0x20<link>
-           ether 94:c6:91:16:c8:05  txqueuelen 1000  (Ethernet)
-           RX packets 55920  bytes 4713026 (4.7 MB)
-           RX errors 0  dropped 42624  overruns 0  frame 0
-           TX packets 9022  bytes 1571300 (1.5 MB)
-           TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-           device interrupt 16  memory 0xdc200000-dc220000
-   
-   enx0050b624498c: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-           inet 25.25.25.200  netmask 255.255.255.0  broadcast 25.25.25.255
-           inet6 fe80::250:b6ff:fe24:498c  prefixlen 64  scopeid 0x20<link>
-           ether 00:50:b6:24:49:8c  txqueuelen 1000  (Ethernet)
-           RX packets 4197657  bytes 341261504 (341.2 MB)
-           RX errors 0  dropped 0  overruns 0  frame 0
-           TX packets 5536970  bytes 358850828 (358.8 MB)
-           TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-   
-   lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
-           inet 127.0.0.1  netmask 255.0.0.0
-           inet6 ::1  prefixlen 128  scopeid 0x10<host>
-           loop  txqueuelen 1000  (Local Loopback)
-           RX packets 1246  bytes 143546 (143.5 KB)
-           RX errors 0  dropped 0  overruns 0  frame 0
-           TX packets 1246  bytes 143546 (143.5 KB)
-           TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-   
-   ```
+. If the IP Address is not valid for the the connected network, it is most likely statically configured. You can validate with or not the device is statically configured by check one of two files
+ .. On Ubnunto 18+ networking is configured via netplan. This can be confirmed by looking at `/etc/netplan/99-bht-internet.yaml`.
++
+[source,bash]
+----
+cat /etc/netplan/99-bht-internet.yaml
+network:
+  version: 2
+  ethernets:
+    eno1:
+      addresses: []
+      dhcp4: true
+      dhcp6: true
+      nameservers:
+        addresses:
+        - 8.8.8.8
+        - 8.8.4.4
+----
++
+If the addresses array is empty (i.e. `addresses:[]`) the interface is configured as DHCP. Additionally the `dhcp4: true` and `dhcp4: true` will be set. If the address array has an IP assigned (i.e. `addresses: ['10.1.0.130']`) the interface is configured statically.
 
-   The inet (IP Address) should be valid for the connected network. 
-   
-2. If the IP Address is not valid for the the connected network, it is most likely statically configured. You can validate with or not the device is statically configured by check one of two files
+ .. On Ubuntu \<= 16 networking is configured in `/etc/network/intefaces`
++
+[source,bash]
+----
+cat /etc/network/interfaces
 
-   1. On Ubnunto 18+ networking is configured via netplan. This can be confirmed by looking at `/etc/netplan/99-bht-internet.yaml`.
+# DHCP Configuration
+auto eth0
+iface eth0 inet dhcp
 
-      ``` bash
-      cat /etc/netplan/99-bht-internet.yaml
-      network:
-        version: 2
-        ethernets:
-          eno1:
-            addresses: []
-            dhcp4: true
-            dhcp6: true
-            nameservers:
-              addresses:
-              - 8.8.8.8
-              - 8.8.4.4
-      ```
+# Static Configuration
+iface eth0 inet static
+address 192.168.1.5
+netmask 255.255.255.0
+gateway 192.168.1.254
+----
+. To reconfigure the interface for DHCP run the following script
++
+[source,shell]
+----
+cd /opt/bht/biobrain/bin
+./net-config.sh -d <interface> # <interface> should be replaced with the interface used for internet i.e. eth0 or p2p1
+----
 
-      If the addresses array is empty (i.e. `addresses:[]`) the interface is configured as DHCP. Additionally the `dhcp4: true` and `dhcp4: true` will be set. If the address array has an IP assigned (i.e. `addresses: ['10.1.0.130']`) the interface is configured statically.
+. That should be it! 😃
 
-   2. On Ubuntu <= 16 networking is configured in `/etc/network/intefaces`
+== Bringing up down interfaces
 
-      ```bash
-      cat /etc/network/interfaces
-      
-      # DHCP Configuration
-      auto eth0
-      iface eth0 inet dhcp
-      
-      # Static Configuration
-      iface eth0 inet static
-      address 192.168.1.5
-      netmask 255.255.255.0
-      gateway 192.168.1.254
-      ```
+. If the networking interface is missing from the `ifconfig` results it might be down. Re-run ifconfig but with the addition of the all flag (i.e. `ifconfig -a`)
+. Check if the interface now appears in the list. if so you are clear to move to the next step, else new configuration will need to be written for the interface. However, writing new configuration is beyond the scope of this guide.
+. Run `sudo ifup <interface>` where `<interface>` is replaced with the interface used for internet.
+. That should be it! 😃
 
-3. To reconfigure the interface for DHCP run the following script
+== Recovering from a Readonly filesystem
 
-   ```shell
-   cd /opt/bht/biobrain/bin
-   ./net-config.sh -d <interface> # <interface> should be replaced with the interface used for internet i.e. eth0 or p2p1
-   ```
+Sometimes the OS (Operating System) will exzpierence a issue that might cause damage to the filesystem. To protect the filesystem the OS might mount the filesystem as Readonly.
 
-4. That should be it! 😃
+. The first step is to try rebooting the biobrain. However if it has been returned to BioHiTech it is most likely the reboot has already been tried and did not work. If a reboot does not work move to the next step.
+. To view all of the mount points available in the system run in a terminal:
++
+[source,shell]
+----
+mount | grep /dev/sd
+----
 
-## Bringing up down interfaces
+. In this case, the root file system is the mount point. But you have, for example, have a problem with creating a file in your home folder, you're going to have to remount /home. Look carefully. When the mount point is selected, left it to mount with write access:
++
+[source,shell]
+----
+sudo mount-o remount,rw /
+# Or to /home:
+sudo mount-o remount,rw /home
+----
 
-1. If the networking interface is missing from the `ifconfig` results it might be down. Re-run ifconfig but with the addition of the all flag (i.e. `ifconfig -a`)
-2. Check if the interface now appears in the list. if so you are clear to move to the next step, else new configuration will need to be written for the interface. However, writing new configuration is beyond the scope of this guide.
-3. Run `sudo ifup <interface>` where `<interface>` is replaced with the interface used for internet.
-4. That should be it! 😃
+. After that you will be able to create the file without any problems. After completion of the work, in order to avoid data corruption when you restart, it is desirable to remount the file system back to read-only mode:
++
+[source,shell]
+----
+sudo mount-o remount,ro /
+----
 
-## Recovering from a Readonly filesystem
+. That should be it! 😃
 
-Sometimes the OS (Operating System) will exzpierence a issue that might cause damage to the filesystem. To protect the filesystem the OS might mount the filesystem as Readonly. 
+== When all else fails, REINSTALL
 
-1. The first step is to try rebooting the biobrain. However if it has been returned to BioHiTech it is most likely the reboot has already been tried and did not work. If a reboot does not work move to the next step.
-
-2. To view all of the mount points available in the system run in a terminal:
-
-   ``` shell
-   mount | grep /dev/sd
-   ```
-
-3. In this case, the root file system is the mount point. But you have, for example, have a problem with creating a file in your home folder, you’re going to have to remount /home. Look carefully. When the mount point is selected, left it to mount with write access:
-
-   ``` shell
-   sudo mount-o remount,rw /
-   # Or to /home:
-   sudo mount-o remount,rw /home
-   ```
-
-4. After that you will be able to create the file without any problems. After completion of the work, in order to avoid data corruption when you restart, it is desirable to remount the file system back to read-only mode:
-
-   ``` shell
-   sudo mount-o remount,ro /
-   ```
-   
-5. That should be it! 😃
-
-## When all else fails, REINSTALL
-
-1. Reinstall the OS the normal way
-2. Celebrate🎉 
+. Reinstall the OS the normal way
+. Celebrate🎉
